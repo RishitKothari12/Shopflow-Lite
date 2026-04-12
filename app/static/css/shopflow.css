@@ -99,6 +99,12 @@ img {
   box-shadow: var(--shadow-md);
 }
 
+.card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
 .nav-links {
   display: flex;
   align-items: center;
