@@ -11,21 +11,21 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t shopflow:latest .'
+                sh 'sudo docker build -t shopflow:latest .'
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/'
+                sh 'sudo kubectl apply -f k8s/'
             }
         }
 
         stage('Verify Deployment') {
             steps {
                 sh '''
-                kubectl get pods
-                kubectl get svc
+                sudo kubectl get pods
+                sudo kubectl get svc
                 '''
             }
         }
