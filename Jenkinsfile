@@ -3,30 +3,21 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Clone') {
             steps {
-                echo "Using Jenkins SCM checkout"
+                git branch: 'main', url: 'https://github.com/RishitKothari12/Shopflow-Lite.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'sudo docker build -t shopflow:latest .'
+                sh 'docker build -t shopflow:latest .'
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'sudo kubectl apply -f k8s/'
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                sh '''
-                sudo kubectl get pods
-                sudo kubectl get svc
-                '''
+                sh 'kubectl apply -f k8s/'
             }
         }
     }
