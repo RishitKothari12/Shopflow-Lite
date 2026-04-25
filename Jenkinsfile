@@ -1,8 +1,8 @@
 pipeline {
     agent any
     environment {
-        // Point to the config we mounted into the container
-        KUBECONFIG = '/root/.kube/config'
+        KUBECONFIG = '/var/jenkins_home/.kube/config'
+        K8S_SERVER = 'http://172.25.160.164:33037'
     }
     stages {
         stage('Checkout') {
@@ -19,11 +19,10 @@ pipeline {
         stage('K8s Deployment') {
             steps {
                 echo 'Deploying to Minikube...'
-                // Use --validate=false to bypass the OpenAPI check that failed
-                sh 'kubectl apply -f k8s/secret.yaml --validate=false'
-                sh 'kubectl apply -f k8s/deployment.yaml --validate=false'
-                sh 'kubectl apply -f k8s/service.yaml --validate=false'
-                sh 'kubectl rollout restart deployment/shopflow'
+                sh "kubectl apply -f k8s/secret.yaml --server=${K8S_SERVER} --validate=false"
+                sh "kubectl apply -f k8s/deployment.yaml --server=${K8S_SERVER} --validate=false"
+                sh "kubectl apply -f k8s/service.yaml --server=${K8S_SERVER} --validate=false"
+                sh "kubectl rollout restart deployment/shopflow --server=${K8S_SERVER}"
             }
         }
     }
