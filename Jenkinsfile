@@ -38,7 +38,8 @@ pipeline {
                         timeout: 20,
                         noTags: true,
                         reference: '',
-                        shallow: false
+                        shallow: true,
+                        depth: 1
                     ]], 
                     userRemoteConfigs: [[
                         url: 'https://github.com/RishitKothari12/Shopflow-Lite.git'
