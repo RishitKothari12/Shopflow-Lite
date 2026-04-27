@@ -1,6 +1,5 @@
 pipeline {
     agent {
-        // This tells Jenkins to spin up the temporary worker pod
         kubernetes {
             yaml '''
             apiVersion: v1
@@ -18,7 +17,6 @@ pipeline {
     }
 
     options {
-        // Prevents the 10-minute timeout error you saw earlier
         timeout(time: 20, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
@@ -26,7 +24,6 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // Deep clone with extended timeout to bypass WSL network drops
                 checkout([
                     $class: 'GitSCM', 
                     branches: [[name: '*/main']], 
@@ -50,7 +47,6 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // We execute these commands INSIDE the temporary kubectl container
                 container('kubectl') {
                     echo 'Deploying ShopFlow to Minikube...'
                     sh '''
@@ -78,9 +74,6 @@ pipeline {
     }
 
     post {
-        always {
-            cleanWs() // Cleans up the workspace to save memory
-        }
         success {
             echo '✅ Pipeline Executed Successfully'
         }
