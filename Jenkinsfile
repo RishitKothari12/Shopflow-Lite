@@ -1,6 +1,7 @@
 pipeline {
     agent {
         kubernetes {
+            websocket true
             yaml '''
             apiVersion: v1
             kind: Pod
