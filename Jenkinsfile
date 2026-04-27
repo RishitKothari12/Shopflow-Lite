@@ -6,12 +6,6 @@ pipeline {
             kind: Pod
             spec:
                 serviceAccountName: jenkins-deployer
-                containers:
-                - name: kubectl
-                  image: bitnami/kubectl:latest
-                  command:
-                  - cat
-                  tty: true
             '''
         }
     }
@@ -47,28 +41,27 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                container('kubectl') {
-                    echo 'Deploying ShopFlow to Minikube...'
-                    sh '''
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    kubectl rollout restart deployment/shopflow
-                    kubectl rollout status deployment/shopflow
-                    '''
-                }
+                echo 'Deploying ShopFlow to Minikube...'
+                sh '''
+                curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
+                chmod +x kubectl
+                
+                ./kubectl apply -f k8s/deployment.yaml -n default
+                ./kubectl apply -f k8s/service.yaml -n default
+                ./kubectl rollout restart deployment/shopflow -n default
+                ./kubectl rollout status deployment/shopflow -n default
+                '''
             }
         }
 
         stage('Verification') {
             steps {
-                container('kubectl') {
-                    sh '''
-                    echo "Checking Pods..."
-                    kubectl get pods
-                    echo "Checking Services..."
-                    kubectl get svc
-                    '''
-                }
+                sh '''
+                echo "Checking Pods..."
+                ./kubectl get pods -n default
+                echo "Checking Services..."
+                ./kubectl get svc -n default
+                '''
             }
         }
     }
