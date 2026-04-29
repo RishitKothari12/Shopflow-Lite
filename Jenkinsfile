@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // This is the standard Docker gateway to the host machine
-        MINIKUBE_SERVER = "https://172.17.0.1:32776"
+        MINIKUBE_SERVER = "https://172.17.0.1:32781"
     }
 
     stages {
