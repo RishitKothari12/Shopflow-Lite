@@ -2,14 +2,14 @@ pipeline {
     agent any 
 
     environment {
-        // This is the standard Docker gateway to the host machine
-        MINIKUBE_SERVER = "https://172.17.0.1:32781"
+        // Updated to your latest port: 32786
+        // 172.17.0.1 is the bridge gateway from Docker to your WSL Host
+        MINIKUBE_SERVER = "https://172.17.0.1:32786"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Pulls the latest code from your Shopflow-Lite GitHub repo
                 checkout scm
             }
         }
@@ -18,13 +18,13 @@ pipeline {
             steps {
                 echo "Deploying Shopflow-Lite to Minikube at ${env.MINIKUBE_SERVER}..."
                 sh '''
-                    # 1. Download the kubectl binary locally for the agent to use
-                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    # 1. Get the kubectl binary
+                    curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
                     chmod +x kubectl
                     
-                    # 2. Apply Kubernetes Manifests
-                    # We use --insecure-skip-tls-verify because the Minikube cert is issued for 127.0.0.1
-                    # We use --validate=false to prevent hangs during slow network lookups
+                    # 2. Apply Manifests
+                    # --insecure-skip-tls-verify: Required because the certificate is issued for 127.0.0.1
+                    # --server: Redirects the request from the container's localhost to the WSL Host
                     ./kubectl apply -f k8s/deployment.yaml -n default \
                         --server=${MINIKUBE_SERVER} \
                         --insecure-skip-tls-verify \
@@ -35,7 +35,7 @@ pipeline {
                         --insecure-skip-tls-verify \
                         --validate=false
                     
-                    # 3. Trigger a rolling restart to pull any new images
+                    # 3. Force Restart Pods
                     ./kubectl rollout restart deployment/shopflow -n default \
                         --server=${MINIKUBE_SERVER} \
                         --insecure-skip-tls-verify
@@ -45,12 +45,7 @@ pipeline {
 
         stage('Verification') {
             steps {
-                echo "Verifying deployment status..."
                 sh '''
-                    ./kubectl rollout status deployment/shopflow -n default \
-                        --server=${MINIKUBE_SERVER} \
-                        --insecure-skip-tls-verify
-                        
                     ./kubectl get pods -n default \
                         --server=${MINIKUBE_SERVER} \
                         --insecure-skip-tls-verify
@@ -61,10 +56,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Pipeline Executed Successfully. Shopflow-Lite is live!"
+            echo "✅ Deployment Successful!"
         }
         failure {
-            echo "❌ Pipeline Failed. Check the console logs for connection or YAML errors."
+            echo "❌ Connection Refused. Check if Minikube is running with --apiserver-ips=172.17.0.1"
         }
     }
 }
