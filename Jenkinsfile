@@ -4,7 +4,7 @@ pipeline {
     environment {
         // Updated to your latest port: 32786
         // 172.17.0.1 is the bridge gateway from Docker to your WSL Host
-        MINIKUBE_SERVER = "https://172.17.0.1:32786"
+        MINIKUBE_SERVER = "https://172.17.0.1:32791"
     }
 
     stages {
