@@ -2,14 +2,17 @@ pipeline {
     agent any 
 
     environment {
-        // Updated to your latest port: 32786
-        // 172.17.0.1 is the bridge gateway from Docker to your WSL Host
-        MINIKUBE_SERVER = "https://172.17.0.1:32791"
+        /* * FIXED PORT: 8443 
+         * Ensure you started minikube with: 
+         * minikube start --apiserver-port=8443 --apiserver-ips=172.17.0.1
+         */
+        MINIKUBE_SERVER = "https://172.17.0.1:8443"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
+                // Pulls code from the GitHub repo defined in the Jenkins job
                 checkout scm
             }
         }
@@ -18,13 +21,14 @@ pipeline {
             steps {
                 echo "Deploying Shopflow-Lite to Minikube at ${env.MINIKUBE_SERVER}..."
                 sh '''
-                    # 1. Get the kubectl binary
-                    curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
-                    chmod +x kubectl
+                    # 1. Download kubectl binary if not present
+                    if [ ! -f ./kubectl ]; then
+                        curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
+                        chmod +x kubectl
+                    fi
                     
-                    # 2. Apply Manifests
-                    # --insecure-skip-tls-verify: Required because the certificate is issued for 127.0.0.1
-                    # --server: Redirects the request from the container's localhost to the WSL Host
+                    # 2. Apply Kubernetes Manifests
+                    # --insecure-skip-tls-verify is used because certificates are usually bound to 127.0.0.1
                     ./kubectl apply -f k8s/deployment.yaml -n default \
                         --server=${MINIKUBE_SERVER} \
                         --insecure-skip-tls-verify \
@@ -35,7 +39,7 @@ pipeline {
                         --insecure-skip-tls-verify \
                         --validate=false
                     
-                    # 3. Force Restart Pods
+                    # 3. Force Restart to pull latest images/configs
                     ./kubectl rollout restart deployment/shopflow -n default \
                         --server=${MINIKUBE_SERVER} \
                         --insecure-skip-tls-verify
@@ -45,6 +49,7 @@ pipeline {
 
         stage('Verification') {
             steps {
+                echo "Verifying deployment status..."
                 sh '''
                     ./kubectl get pods -n default \
                         --server=${MINIKUBE_SERVER} \
@@ -56,10 +61,12 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment Successful!"
+            echo "✅ Deployment Successful on port 8443!"
         }
         failure {
-            echo "❌ Connection Refused. Check if Minikube is running with --apiserver-ips=172.17.0.1"
+            echo "❌ Connection Refused."
+            echo "👉 Fix: Ensure Minikube is running on the host with:"
+            echo "   minikube start --apiserver-port=8443 --apiserver-ips=172.17.0.1"
         }
     }
 }
